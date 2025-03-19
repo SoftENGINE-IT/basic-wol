@@ -64,58 +64,12 @@ fi
 echo "[INFO] Installiere benötigte Pakete express & wol ..."
 npm install express wol
 
-# 6) Beispielscript index.js anlegen, falls es noch nicht existiert
-if [ ! -f "$MAIN_SCRIPT" ]; then
-  echo "[INFO] Erstelle Beispielscript: $MAIN_SCRIPT"
-  cat <<EOF > "$MAIN_SCRIPT"
-const express = require('express');
-const wol = require('wol');
-const app = express();
-
-app.use(express.urlencoded({ extended: true }));
-
-app.get('/', (req, res) => {
-  res.send(\`
-    <!DOCTYPE html>
-    <html>
-      <head><title>WOL</title></head>
-      <body>
-        <h1>Wake on LAN</h1>
-        <form method="POST" action="/wake">
-          <label for="mac">MAC-Adresse:</label>
-          <input id="mac" name="mac" required>
-          <label for="broadcast">Broadcast:</label>
-          <input id="broadcast" name="broadcast" required>
-          <button type="submit">Wecken</button>
-        </form>
-      </body>
-    </html>
-  \`);
-});
-
-app.post('/wake', (req, res) => {
-  const { mac, broadcast } = req.body;
-  if (!mac || !broadcast) {
-    return res.status(400).send('MAC und Broadcast werden benötigt!');
-  }
-  wol.wake(mac, { address: broadcast }, (err, result) => {
-    if (err) {
-      return res.status(500).send('Fehler beim Versenden des Magic Packet: ' + err);
-    }
-    if (result) {
-      return res.send(\`Magic Packet an \${mac} (Broadcast: \${broadcast}) gesendet.\`);
-    } else {
-      return res.status(500).send('Konnte Magic Packet nicht senden.');
-    }
-  });
-});
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(\`WOL-Service läuft auf Port \${PORT}\`);
-});
-EOF
-fi
+# 6) Kopiere deine lokale index.js nach /opt/wol-skripte/
+#    - Wir überschreiben, falls dort schon eine liegt.
+#    - Falls du ein Überschreiben vermeiden willst, entferne das "-f".
+cd - > /dev/null  # Zurück in das ursprüngliche Verzeichnis (wo dein Skript + index.js liegt)
+echo "[INFO] Kopiere lokale index.js nach $WORK_DIR/$MAIN_SCRIPT ..."
+cp -f "./index.js" "$WORK_DIR/$MAIN_SCRIPT"
 
 # 7) Ermitteln des absoluten Pfads zum Node-Binary
 echo "[INFO] Ermittle Node-Pfad ..."
